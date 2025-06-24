@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Food Search - Complete Enhanced App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍎</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <!-- Initial loading state -->
+    <div id="initial-loading" class="initial-loading">
+        <div class="spinner"></div>
+        <span>Loading...</span>
+    </div>
+    
+    <div id="auth-container" class="login-container">
+        <div class="login-header">
+            <h1>🍎 Food Search</h1>
+            <p>Track your daily nutrition with advanced goals</p>
+        </div>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+        <div id="success-message" class="success" style="display: none;"></div>
+        
+        <div id="loading-state" style="text-align: center; padding: 40px; display: none;">
+            <div class="spinner" style="margin: 0 auto 20px;"></div>
+            <p style="color: #666;">Loading...</p>
+        </div>
+        
+        <div id="login-form" style="display: none;">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button class="btn btn-primary" onclick="login()">Sign In</button>
+            <div class="form-switch">
+                <p>Don't have an account? <a href="#" onclick="showRegisterForm()">Create one</a></p>
+            </div>
+        </div>
+        
+        <div id="register-form" style="display: none;">
+            <div class="form-group">
+                <label for="reg-username">Username</label>
+                <input type="text" id="reg-username" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-email">Email</label>
+                <input type="email" id="reg-email" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Password</label>
+                <input type="password" id="reg-password" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-first-name">First Name</label>
+                <input type="text" id="reg-first-name">
+            </div>
+            <div class="form-group">
+                <label for="reg-last-name">Last Name</label>
+                <input type="text" id="reg-last-name">
+            </div>
+            <button class="btn btn-primary" onclick="register()">Create Account</button>
+            <div class="form-switch">
+                <p>Already have an account? <a href="#" onclick="showLoginForm()">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="app-container" style="display: none;">
+        <!-- Top navigation bar -->
+        <div class="top-bar">
+            <div class="user-info">
+                <span class="user-welcome" id="user-welcome">Welcome!</span>
+                <div class="user-actions">
+                    <div class="notification-container" style="position: relative;">
+                        <button class="notification-bell" id="notification-bell" onclick="toggleNotifications()">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
+                        </button>
+                        <div class="notification-dropdown" id="notification-dropdown">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark all read</button>
+                            </div>
+                            <div id="notification-list">
+                                <div class="notification-empty">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="settings-btn" onclick="showSettings()">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+        
+        <h1>🍎 Food Search</h1>
+        
+        <!-- Quick Actions Bar -->
+        <div class="quick-actions">
+            <button class="quick-action-btn goals" onclick="showGoalSetting()">
+                <i class="fas fa-target"></i> Set Goals
+            </button>
+            <button class="quick-action-btn" onclick="showWeightHistory()">
+                <i class="fas fa-chart-line"></i> Weight History
+            </button>
+            <button class="quick-action-btn" onclick="exportData()">
+                <i class="fas fa-download"></i> Export Data
+            </button>
+        </div>
+
+        <!-- Date Navigation -->
+        <div class="date-navigation">
+            <button class="today-btn" id="today-btn" onclick="goToToday()">
+                <i class="fas fa-calendar-day"></i>
+            </button>
+            <div class="main-navigation">
+                <button class="nav-btn" id="prev-day" onclick="changeDate(-1)">‹</button>
+                <button class="nav-btn date-btn" id="current-date" onclick="showCalendar()">Today</button>
+                <button class="nav-btn" id="next-day" onclick="changeDate(1)">›</button>
+                <div id="calendar-dropdown" class="calendar-dropdown">
+                    <div class="calendar-header">
+                        <!-- Header will be populated by renderCalendar() -->
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Calorie Tracker -->
+        <div class="calorie-tracker-enhanced">
+            <!-- Main Section -->
+            <div class="calorie-main-section" onclick="toggleCalorieExpansion()">
+                <div class="calorie-header">
+                    <div class="calorie-tracker-title">
+                        🔥 <span id="calorie-date-title">Today's Progress</span>
+                    </div>
+                    <div class="calorie-numbers">
+                        <div class="calorie-consumed" id="calorie-consumed">0</div>
+                        <div class="calorie-goal" id="calorie-goal-text">of 2000 kcal</div>
+                    </div>
+                </div>
+                
+                <div class="calorie-progress-bar">
+                    <div class="calorie-progress-fill" id="calorie-progress-fill" style="width: 0%"></div>
+                </div>
+                
+                <div class="calorie-remaining" id="calorie-remaining">2000 kcal remaining</div>
+                
+                <button class="expand-toggle" id="calorie-toggle">▼</button>
+            </div>
+
+            <!-- Expandable Section -->
+            <div class="calorie-expandable" id="calorie-expandable">
+                <div class="calorie-expandable-content">
+                    <!-- Left Half -->
+                    <div class="calorie-charts-left">
+                        <!-- Goal Progress -->
+                        <div class="goal-progress-section" id="goal-progress-section" style="display: none;">
+                            <div class="goal-title">🎯 Weight Goal Progress</div>
+                            <div class="goal-stats">
+                                <span id="current-weight-display">Current: -- kg</span>
+                                <span id="target-weight-display">Target: -- kg</span>
+                            </div>
+                            <div class="goal-progress-bar">
+                                <div class="goal-progress-fill" id="goal-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <div id="goal-progress-text" style="text-align: center; margin-top: 8px; font-size: 12px; opacity: 0.8;">
+                                Set a goal to track progress
+                            </div>
+                        </div>
+
+                        <!-- Weight Input -->
+                        <div class="weight-input-section">
+                            <div class="goal-title">📊 Log Today's Weight</div>
+                            <div class="weight-input-row">
+                                <input type="number" class="weight-input" id="weight-input" placeholder="75.2" step="0.1" min="30" max="300">
+                                <span style="color: rgba(255,255,255,0.8); flex-shrink: 0;">kg</span>
+                                <button class="weight-log-btn" onclick="logWeight()">Log Weight</button>
+                            </div>
+                            <div class="latest-weight" id="latest-weight-display">Enter your weight to start tracking</div>
+                        </div>
+
+                        <!-- Macro Breakdown -->
+                        <div class="macro-breakdown-tracker">
+                            <div class="goal-title">🍽️ Macro Breakdown</div>
+                            <div class="macro-item-tracker">
+                                <span class="macro-label">Protein</span>
+                                <div class="macro-bar-tracker">
+                                    <div class="macro-bar-fill-tracker protein-fill" id="protein-progress" style="width: 0%"></div>
+                                </div>
+                                <span class="macro-value" id="protein-text">0g / 0g</span>
+                            </div>
+                            <div class="macro-item-tracker">
+                                <span class="macro-label">Carbs</span>
+                                <div class="macro-bar-tracker">
+                                    <div class="macro-bar-fill-tracker carbs-fill" id="carbs-progress" style="width: 0%"></div>
+                                </div>
+                                <span class="macro-value" id="carbs-text">0g / 0g</span>
+                            </div>
+                            <div class="macro-item-tracker">
+                                <span class="macro-label">Fat</span>
+                                <div class="macro-bar-tracker">
+                                    <div class="macro-bar-fill-tracker fat-fill" id="fat-progress" style="width: 0%"></div>
+                                </div>
+                                <span class="macro-value" id="fat-text">0g / 0g</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Half: Weight Chart -->
+                    <div class="calorie-charts-right">
+                        <div class="weight-chart-container">
+                            <div class="weight-chart-title">📈 Weight Progress (30 days)</div>
+                            <canvas id="weight-chart" class="chart-canvas"></canvas>
+                            <div class="no-data-message" id="no-data-message">
+                                No weight data available.<br>
+                                <small>Start logging your weight to see progress!</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="query" placeholder="Start typing to search foods (e.g. alma, kenyér, tej)..." autocomplete="off">
+            <div id="autocomplete" class="autocomplete-dropdown"></div>
+        </div>
+        
+        <div class="selected-section">
+            <h3 id="meals-title">Today's Meals</h3>
+            <div id="selected-items" class="selected-items">
+                <div class="empty-state">
+                    Start tracking your daily meals by searching and selecting foods above
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="testDatabase()" class="debug-btn">Test DB</button>
+        <button onclick="debugAPI()" class="debug-btn">Debug API</button>
+        <button onclick="loadTodayMeals()" class="debug-btn">Load Today</button>
+        <div id="debug-result"></div>
+    </div>
+
+    <!-- Food Entry Modal -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span id="modal-food-title">Étkezés hozzáadása</span>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-content">
+                <div class="quantity-label-badge">Mennyit?</div>
+                
+                <div class="quantity-and-portions">
+                    <div class="quantity-controls">
+                        <div class="quantity-input-container">
+                            <button class="quantity-btn" onclick="adjustQuantity(-1)">-</button>
+                            <input type="number" id="quantity-input" class="quantity-input" value="1" min="0.1" step="0.1">
+                            <button class="quantity-btn" onclick="adjustQuantity(1)">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="portion-presets" id="portion-presets">
+                        <!-- Will be populated with unified portions and units -->
+                    </div>
+                </div>
+                
+                <div class="meal-section">
+                    <div class="meal-label">Mikor</div>
+                    <div class="meal-buttons">
+                        <button class="meal-btn breakfast" data-meal="reggeli">Reggeli</button>
+                        <button class="meal-btn snack1" data-meal="tizorai">Tízórai</button>
+                        <button class="meal-btn lunch selected" data-meal="ebed">Ebéd</button>
+                        <button class="meal-btn snack2" data-meal="uzsonna">Uzsonna</button>
+                        <button class="meal-btn dinner" data-meal="vacsora">Vacsora</button>
+                        <button class="meal-btn snack3" data-meal="nasi">Nasi</button>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="action-btn confirm-btn" onclick="confirmSelection()">Megettem!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Setting Modal -->
+    <div id="goal-modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🎯 Set Your Goals</h2>
+                <p>Choose your path to success</p>
+                <button class="close-btn" onclick="closeGoalModal()">×</button>
+            </div>
+            <div class="modal-content">
+                <div class="goal-option" data-goal="weight_loss">
+                    <h4>🔥 Weight Loss</h4>
+                    <p>Lose weight steadily and safely with a calorie deficit</p>
+                </div>
+                
+                <div class="goal-option" data-goal="weight_gain">
+                    <h4>💪 Weight Gain</h4>
+                    <p>Build muscle and gain weight with a calorie surplus</p>
+                </div>
+                
+                <div class="goal-option" data-goal="maintain">
+                    <h4>⚖️ Maintain Weight</h4>
+                    <p>Stay at your current weight with balanced calories</p>
+                </div>
+                
+                <div class="goal-option" data-goal="custom_calories">
+                    <h4>🎨 Custom Calorie Target</h4>
+                    <p>Set your own daily calorie goal</p>
+                </div>
+
+                <!-- Goal Details Forms -->
+                <div id="weight_loss_details" class="goal-details">
+                    <div class="form-group">
+                        <label>Target Weight (kg)</label>
+                        <input type="number" id="target_weight_loss" step="0.1" placeholder="70.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Date</label>
+                        <input type="date" id="target_date_loss">
+                    </div>
+                </div>
+
+                <div id="weight_gain_details" class="goal-details">
+                    <div class="form-group">
+                        <label>Target Weight (kg)</label>
+                        <input type="number" id="target_weight_gain" step="0.1" placeholder="80.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Date</label>
+                        <input type="date" id="target_date_gain">
+                    </div>
+                </div>
+
+                <div id="custom_calories_details" class="goal-details">
+                    <div class="form-group">
+                        <label>Daily Calorie Target</label>
+                        <input type="number" id="custom_calories" placeholder="2000">
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeGoalModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveGoal()">Set Goal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal-overlay" class="modal-overlay">
+        <div class="modal settings-modal">
+            <div class="modal-header">
+                User Settings
+                <button class="close-btn" onclick="closeSettings()">×</button>
+            </div>
+            <div class="modal-content">
+                <div class="settings-section">
+                    <h4>Personal Information</h4>
+                    <div class="settings-row">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="settings-first-name">
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="settings-last-name">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="form-group">
+                            <label>Height (cm)</label>
+                            <input type="number" id="settings-height" placeholder="175">
+                        </div>
+                        <div class="form-group">
+                            <label>Weight (kg)</label>
+                            <input type="number" id="settings-weight" placeholder="70">
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" id="settings-age" placeholder="25">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4>Nutrition Goals</h4>
+                    <div class="settings-row">
+                        <div class="form-group">
+                            <label>Daily Calorie Goal</label>
+                            <input type="number" id="settings-calorie-goal" placeholder="2000">
+                        </div>
+                        <div class="form-group">
+                            <label>Activity Level</label>
+                            <select id="settings-activity" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <option value="sedentary">Sedentary</option>
+                                <option value="light">Light Activity</option>
+                                <option value="moderate">Moderate Activity</option>
+                                <option value="active">Active</option>
+                                <option value="very_active">Very Active</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="form-group">
+                            <label>Macro Distribution</label>
+                            <select id="settings-macro-preset" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <option value="balanced">Balanced (40% Carbs, 30% Protein, 30% Fat)</option>
+                                <option value="low_carb">Low Carb (20% Carbs, 40% Protein, 40% Fat)</option>
+                                <option value="high_protein">High Protein (30% Carbs, 40% Protein, 30% Fat)</option>
+                                <option value="keto">Ketogenic (5% Carbs, 25% Protein, 70% Fat)</option>
+                                <option value="mediterranean">Mediterranean (45% Carbs, 20% Protein, 35% Fat)</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="custom-macros" class="settings-row" style="display: none;">
+                        <div class="form-group">
+                            <label>Carbs %</label>
+                            <input type="number" id="settings-carbs-percent" min="5" max="80" placeholder="40">
+                        </div>
+                        <div class="form-group">
+                            <label>Protein %</label>
+                            <input type="number" id="settings-protein-percent" min="10" max="50" placeholder="30">
+                        </div>
+                        <div class="form-group">
+                            <label>Fat %</label>
+                            <input type="number" id="settings-fat-percent" min="10" max="80" placeholder="30">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="action-btn cancel-btn" onclick="closeSettings()" style="background: #95a5a6; color: white; padding: 8px 12px;">Cancel</button>
+                    <button class="action-btn confirm-btn" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

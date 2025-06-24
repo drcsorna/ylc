@@ -1,0 +1,44 @@
+[project]
+name = "ylc"
+version = "1.0.0"
+description = "Complete Enhanced Food Search App with nutrition tracking, goal setting, and weight management"
+authors = [
+    {name = "Richard Nagy", email = "drcsorna@gmail.com"}
+]
+requires-python = ">=3.8.1"
+dependencies = [
+    "flask>=2.3.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "hatch>=1.0.0",
+    "black>=23.0.0",
+    "pytest>=7.0.0",
+]
+
+# Simple build system for basic packaging
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Tell hatchling what files to include
+[tool.hatch.build.targets.wheel]
+include = [
+    "app.py",
+    "index.html", 
+    "style.css",
+    "app.js",
+    "*.md",
+]
+
+# Version management (optional - install hatch as tool)
+[tool.hatch.version]
+path = "app.py"
+pattern = "__version__ = ['\"](?P<version>[^'\"]*)['\"]"
+
+# Code formatting
+[tool.black]
+line-length = 88
+target-version = ['py38']
