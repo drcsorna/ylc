@@ -1,0 +1,8 @@
+# Virtual environment
+.venv/
+
+# Database file
+food_app.db
+
+# Lock file
+uv.lock

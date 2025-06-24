@@ -17,7 +17,7 @@ from functools import wraps
 
 __version__ = "2.2.4"
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'your-secret-key-change-this-in-production'
 DB_PATH = 'food_app.db'
 
